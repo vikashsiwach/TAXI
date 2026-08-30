@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { Link } from 'react-router-dom'
 
-import LocationSearchPanel from '../components/LocationSearchPanel'
+import LocationInput from '../components/LocationInput'
 import ConfirmRide from '../components/ConfirmRide'
 import VehiclePanel from '../components/VehiclePanel'
 import LookingForDriver from '../components/LookingForDriver'
@@ -15,39 +15,56 @@ import { formatDistance, formatDuration } from '../utils/fare'
 const Home = () => {
   const {
     pickup,
+    setPickup,
     destination,
+    setDestination,
     route,
     isCalculating,
     routeError,
-    setActiveField,
   } = useRide()
 
-  const [panelOpen, setPanelOpen] = useState(false)
   const [vehiclePanel, setVehiclePanel] = useState(false)
   const [confirmRidePanel, setConfirmRidePanel] = useState(false)
   const [vehicleFound, setVehicleFound] = useState(false)
   const [waitingForDriver, setWaitingForDriver] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [pickupFocused, setPickupFocused] = useState(false)
+  const [destinationFocused, setDestinationFocused] = useState(false)
+  const [logoDismissed, setLogoDismissed] = useState(false)
 
-  const panelRef = useRef(null)
-  const panelCloseRef = useRef(null)
   const vehiclePanelRef = useRef(null)
   const confirmRidePanelRef = useRef(null)
   const vehicleFoundRef = useRef(null)
   const waitingForDriverRef = useRef(null)
 
-  useGSAP(
-    function () {
-      if (panelOpen) {
-        gsap.to(panelRef.current, { height: '70%', padding: 24 })
-        gsap.to(panelCloseRef.current, { opacity: 1 })
-      } else {
-        gsap.to(panelRef.current, { height: '0%', padding: 0 })
-        gsap.to(panelCloseRef.current, { opacity: 0 })
-      }
-    },
-    [panelOpen]
-  )
+  const hideLogo = logoDismissed || pickupFocused || destinationFocused
+
+  const dismissLogo = () => setLogoDismissed(true)
+
+  useEffect(() => {
+    if (pickup || destination) setLogoDismissed(true)
+  }, [pickup, destination])
+
+  const handlePickupSelect = (locationData) => {
+    setPickup(locationData)
+    dismissLogo()
+    if (destination?.lat) setVehiclePanel(true)
+  }
+
+  const handleDestinationSelect = (locationData) => {
+    setDestination(locationData)
+    dismissLogo()
+    if (pickup?.lat) setVehiclePanel(true)
+  }
+
+  const handlePickupClear = () => {
+    setPickup(null)
+    setVehiclePanel(false)
+  }
+
+  const handleDestinationClear = () => {
+    setDestination(null)
+    setVehiclePanel(false)
+  }
 
   useGSAP(
     function () {
@@ -93,19 +110,14 @@ const Home = () => {
     [vehicleFound]
   )
 
-  const openSearch = (field) => {
-    setActiveField(field)
-    setSearchQuery(field === 'pickup' ? pickup?.address || '' : destination?.address || '')
-    setPanelOpen(true)
-  }
-
   return (
     <div className="h-screen relative">
       <div className="fixed p-6 top-0 flex items-center justify-between w-screen z-20">
-        <img className="w-16" src="/taxi_logo.png" alt="" />
+        {!hideLogo && <img className="w-16" src="/taxi_logo.png" alt="" />}
+        {hideLogo && <div />}
         <Link
           to="/users/logout"
-          className="h-10 w-10 bg-white flex items-center justify-center rounded-full shadow"
+          className="h-10 w-10 bg-white flex items-center justify-center rounded-full shadow ml-auto"
         >
           <i className="text-lg font-medium ri-logout-box-r-line"></i>
         </Link>
@@ -126,33 +138,33 @@ const Home = () => {
       </div>
 
       <div className="flex flex-col justify-end h-screen absolute top-0 w-full pointer-events-none">
-        <div className="h-[30%] p-5 bg-white relative pointer-events-auto">
-          <h5
-            ref={panelCloseRef}
-            onClick={() => setPanelOpen(false)}
-            className="absolute opacity-0 right-6 top-6 text-2xl cursor-pointer"
-          >
-            <i className="ri-arrow-down-wide-line"></i>
-          </h5>
+        <div className="p-5 bg-white relative pointer-events-auto">
           <h4 className="text-2xl font-semibold">Find a trip</h4>
-          <form className="relative py-3">
+          <form className="relative py-3" onSubmit={(e) => e.preventDefault()}>
             <div className="line absolute h-16 w-1 top-[50%] -translate-y-1/2 left-5 bg-gray-700 rounded-full"></div>
-            <input
-              onClick={() => openSearch('pickup')}
-              readOnly
-              value={pickup?.shortName || pickup?.address || ''}
-              className="bg-[#eee] px-12 py-2 text-lg rounded-lg w-full cursor-pointer"
-              type="text"
+            <LocationInput
               placeholder="Add a pick-up location"
+              selectedLocation={pickup}
+              onSelect={handlePickupSelect}
+              onClear={handlePickupClear}
+              showCurrentLocation
+              onFocusChange={(focused) => {
+                setPickupFocused(focused)
+                if (focused) dismissLogo()
+              }}
             />
-            <input
-              onClick={() => openSearch('destination')}
-              readOnly
-              value={destination?.shortName || destination?.address || ''}
-              className="bg-[#eee] px-12 py-2 text-lg rounded-lg w-full mt-3 cursor-pointer"
-              type="text"
-              placeholder="Enter your destination"
-            />
+            <div className="mt-3">
+              <LocationInput
+                placeholder="Enter your destination"
+                selectedLocation={destination}
+                onSelect={handleDestinationSelect}
+                onClear={handleDestinationClear}
+                onFocusChange={(focused) => {
+                  setDestinationFocused(focused)
+                  if (focused) dismissLogo()
+                }}
+              />
+            </div>
           </form>
           {routeError && <p className="text-red-500 text-sm">{routeError}</p>}
           {route && !vehiclePanel && (
@@ -163,22 +175,6 @@ const Home = () => {
               Choose Vehicle · {formatDistance(route.distance)}
             </button>
           )}
-        </div>
-        <div ref={panelRef} className="bg-white h-0 overflow-y-auto pointer-events-auto">
-          <div className="px-6 pb-2">
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#eee] px-4 py-3 text-base rounded-lg w-full"
-              type="text"
-              placeholder="Search for a location..."
-            />
-          </div>
-          <LocationSearchPanel
-            setPanelOpen={setPanelOpen}
-            setVehiclePanel={setVehiclePanel}
-            searchQuery={searchQuery}
-          />
         </div>
       </div>
 
