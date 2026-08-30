@@ -62,7 +62,7 @@ const CaptainSignup = () => {
   return (
     <div className='p-7 h-screen flex flex-col justify-between'>
       <div>
-       <img className='w-16 mb-10' src="https://pngimg.com/uploads/uber/uber_PNG24.png" alt="" />
+       <img className='w-16 mb-10' src="/taxi_logo.png" alt="" />
         <form onSubmit= {(e)=>{
           submitHandler(e)
         }}>

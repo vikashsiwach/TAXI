@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+.leaflet-container {
+  z-index: 0;
+  font-family: inherit;
+}

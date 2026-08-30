@@ -46,7 +46,7 @@ const UserSignup = () => {
   return (
     <div className='p-7 h-screen flex flex-col justify-between'>
       <div>
-       <img className='w-16 mb-10' src="https://imgs.search.brave.com/A_wNAU9eR188BuAPpg8wemrqXHFWxWnQUdh4scN1Ko0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9sb2dv/aGlzdG9yeS5uZXQv/d3AtY29udGVudC91/cGxvYWRzLzIwMjMv/MDYvVWJlci1Mb2dv/LTIwMTYtMTAyNHg1/NzYucG5n" alt="" />
+       <img className='w-16 mb-10' src="/taxi_logo.png" alt="" />
         <form onSubmit= {(e)=>{
           submitHandler(e)
         }}>
