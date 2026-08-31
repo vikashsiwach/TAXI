@@ -1,25 +1,21 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserDataContext } from '../context/UserContext'
 import api from '../api/axios'
 
-const UserProtectWrapper = ({ children }) => {
+const UserGuestWrapper = ({ children }) => {
   const navigate = useNavigate()
-  const { setUser } = useContext(UserDataContext)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     api
       .get('/users/profile')
-      .then((response) => {
-        setUser(response.data)
-        setIsLoading(false)
+      .then(() => {
+        navigate('/home', { replace: true })
       })
       .catch(() => {
-        sessionStorage.removeItem('userSession')
-        navigate('/login', { replace: true })
+        setIsLoading(false)
       })
-  }, [navigate, setUser])
+  }, [navigate])
 
   if (isLoading) {
     return (
@@ -32,4 +28,4 @@ const UserProtectWrapper = ({ children }) => {
   return children
 }
 
-export default UserProtectWrapper
+export default UserGuestWrapper
