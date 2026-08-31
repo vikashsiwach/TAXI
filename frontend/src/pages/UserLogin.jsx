@@ -26,12 +26,16 @@ const UserLogin = () => {
         sessionStorage.setItem('userSession', 'true')
         navigate('/home', { replace: true })
       }
-    } catch {
-      setError('Invalid email or password')
+    } catch (err) {
+      const data = err.response?.data
+      if (data?.message) {
+        setError(data.message)
+      } else if (data?.errors?.length) {
+        setError(data.errors[0].msg)
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
     }
-
-    setEmail('')
-    setPassword('')
   }
 
   return (

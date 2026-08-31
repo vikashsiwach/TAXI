@@ -9,12 +9,15 @@ const UserSignup = () => {
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [error, setError] = useState('')
 
   const navigate = useNavigate()
   const { setUser } = useContext(UserDataContext)
 
   const submitHandler = async (e) => {
     e.preventDefault()
+    setError('')
+
     const newUser = {
       fullname: {
         firstname: firstName,
@@ -24,18 +27,24 @@ const UserSignup = () => {
       password: password,
     }
 
-    const response = await api.post('/users/register', newUser)
-    if (response.status === 201) {
-      const data = response.data
-      setUser(data.user)
-      sessionStorage.setItem('userSession', 'true')
-      navigate('/home', { replace: true })
+    try {
+      const response = await api.post('/users/register', newUser)
+      if (response.status === 201) {
+        const data = response.data
+        setUser(data.user)
+        sessionStorage.setItem('userSession', 'true')
+        navigate('/home', { replace: true })
+      }
+    } catch (err) {
+      const data = err.response?.data
+      if (data?.message) {
+        setError(data.message)
+      } else if (data?.errors?.length) {
+        setError(data.errors[0].msg)
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
     }
-
-    setEmail('')
-    setFirstName('')
-    setLastName('')
-    setPassword('')
   }
 
   return (
@@ -94,6 +103,7 @@ const UserSignup = () => {
             type="password"
             placeholder="Password"
           />
+          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
           <button className="flex items-center justify-center w-full bg-black text-white py-3 rounded-lg mt-5">
             Sign Up
           </button>
